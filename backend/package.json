@@ -1,0 +1,20 @@
+{
+  "name": "program-backend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/main.ts",
+    "start": "tsx --env-file-if-exists=.env src/main.ts",
+    "typecheck": "tsc -p .",
+    "import": "tsx --env-file-if-exists=.env scripts/import-csv.ts",
+    "test": "tsx test/e2e.ts && tsx test/import.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "@types/node": "^22.0.0"
+  }
+}
