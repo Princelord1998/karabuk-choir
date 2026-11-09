@@ -35,6 +35,20 @@ export const createHttpServer = (uc: ProgramUseCases) =>
   return send(res, 200, await uc.listUsers());
 }
 
+if (m === "GET" && path === "/") {
+  return send(res, 200, {
+    status: "ok",
+    message: "Karabuk Choir API is running",
+  });
+}
+
+if (m === "GET" && path === "/health") {
+  return send(res, 200, {
+    status: "ok",
+    service: "karabuk-choir-api",
+  });
+}
+
 if (m === "POST" && path === "/api/admin/users") {
   await uc.assertAdmin(bearer(req));
   return send(res, 201, await uc.createUser(await readJson(req)));
