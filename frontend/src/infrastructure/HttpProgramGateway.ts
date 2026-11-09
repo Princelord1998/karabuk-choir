@@ -1,5 +1,6 @@
 // Adapter: talks to the TypeScript backend over HTTP. Keeps the login token in the browser.
 import type { ProgramGateway } from "../application/ProgramGateway";
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 const TOKEN_KEY = "choir-token";
 const getToken = () => { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } };
@@ -7,7 +8,7 @@ const setToken = (t: string | null) => { try { t ? localStorage.setItem(TOKEN_KE
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken();
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: { ...(body !== undefined ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -64,8 +65,11 @@ deleteAdminUser: async (id) => {
   getSong: (id) => request("GET", `/api/songs/${id}`),
   listMasses: (limit, before) => request("GET", `/api/masses${qs({ limit, before })}`),
   getProgram: (date) => request("GET", `/api/masses/${date}/program`),
-  pdfUrl: (date, community) => `/api/masses/${date}/program.pdf?community=${encodeURIComponent(community)}`,
-  docxUrl: (date, community) => `/api/masses/${date}/program.docx?community=${encodeURIComponent(community)}`,
+  pdfUrl: (date, community) =>
+  `${API_BASE_URL}/api/masses/${date}/program.pdf?community=${encodeURIComponent(community)}`,
+
+  docxUrl: (date, community) =>
+  `${API_BASE_URL}/api/masses/${date}/program.docx?community=${encodeURIComponent(community)}`,
 
   createSong: (input) => request("POST", "/api/songs", input),
   updateSong: (id, input) => request("PUT", `/api/songs/${id}`, input),
