@@ -11,5 +11,6 @@ COPY . .
 
 ENV PREVIEW_FROM_WORD=1
 ENV ALLOW_FALLBACK=0
-EXPOSE 5001
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--timeout", "180", "app:app"]
+# Shell form so $PORT is expanded at runtime. Fallback to 10000 if unset.
+
+CMD gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --timeout 180 app:app
