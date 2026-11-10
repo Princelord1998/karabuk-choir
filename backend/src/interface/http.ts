@@ -20,8 +20,40 @@ const bearer = (req: IncomingMessage): string | null => {
   return h.startsWith("Bearer ") ? h.slice(7).trim() || null : null;
 };
 
+const ALLOWED_ORIGINS = [
+  "https://karabuk-choir-hjqoo2n39-lord-47e0.vercel.app",
+
+  // Add your permanent Vercel production domain here if you have one.
+];
+
 export const createHttpServer = (uc: ProgramUseCases) =>
   createServer(async (req, res) => {
+
+    // ---- CORS
+    const origin = req.headers.origin;
+
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+
+    // Handle browser preflight requests.
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      return res.end();
+    }
+
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
       const path = url.pathname;
@@ -118,11 +150,22 @@ if ((g = path.match(/^\/api\/admin\/users\/([^/]+)$/))) {
       }
 
       // ---- programs
-      if ((g = path.match(/^\/api\/masses\/([^/]+)\/program\.pdf$/)) && m === "GET") {
-        const pdf = await uc.renderPdf(g[1], url.searchParams.get("community") ?? undefined);
-        res.writeHead(200, { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="programme_${g[1]}.pdf"` });
-        return res.end(Buffer.from(pdf));
-      }
+      if ((g = path.match(/^\/api\/masses\/([^/]+)\/program\.pdf$/)) && (m === "GET" || m === "HEAD")) {
+  const pdf = await uc.renderPdf(
+    g[1],
+    url.searchParams.get("community") ?? undefined
+  );
+
+  const buffer = Buffer.from(pdf);
+
+  res.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Length": buffer.length,
+    "Content-Disposition": `inline; filename="programme_${g[1]}.pdf"`,
+  });
+
+  return m === "HEAD" ? res.end() : res.end(buffer);
+}
       if ((g = path.match(/^\/api\/masses\/([^/]+)\/program\.docx$/)) && m === "GET") {
         const docx = await uc.renderWord(g[1], url.searchParams.get("community") ?? undefined);
         res.writeHead(200, {
