@@ -21,7 +21,7 @@ const bearer = (req: IncomingMessage): string | null => {
 };
 
 const ALLOWED_ORIGINS = [
-  "https://karabuk-choir-hjqoo2n39-lord-47e0.vercel.app",
+  "https://karabuk-choir.vercel.app",
 
   // Add your permanent Vercel production domain here if you have one.
 ];
