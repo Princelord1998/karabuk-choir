@@ -188,18 +188,76 @@ def _soffice():
     return None
 
 
+
 def _via_libreoffice(src, outdir, errors):
     exe = _soffice()
+
     if not exe:
-        errors.append("LibreOffice: not found (install it from libreoffice.org)")
+        errors.append(
+            "LibreOffice: executable not found. "
+            "Checked soffice and libreoffice."
+        )
         return False
+
+    profile_dir = tempfile.mkdtemp(prefix="lo-profile-")
+
     try:
-        subprocess.run([exe, "--headless", "--convert-to", "pdf", "--outdir", outdir, src],
-                       check=True, capture_output=True, timeout=120)
-    except Exception as e:
-        errors.append(f"LibreOffice: conversion failed ({type(e).__name__}: {e})")
+        profile_uri = "file://" + profile_dir.replace(os.sep, "/")
+
+        result = subprocess.run(
+            [
+                exe,
+                "--headless",
+                "--nologo",
+                "--nodefault",
+                "--nofirststartwizard",
+                f"-env:UserInstallation={profile_uri}",
+                "--convert-to",
+                "pdf:writer_pdf_Export",
+                "--outdir",
+                outdir,
+                src,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        pdf_path = os.path.join(
+            outdir,
+            os.path.splitext(os.path.basename(src))[0] + ".pdf"
+        )
+
+        if not os.path.isfile(pdf_path):
+            errors.append(
+                "LibreOffice: conversion completed but PDF was not created. "
+                f"stdout={result.stdout}; stderr={result.stderr}"
+            )
+            return False
+
+        return True
+
+    except subprocess.TimeoutExpired:
+        errors.append("LibreOffice: conversion timed out after 120 seconds")
         return False
-    return os.path.exists(os.path.join(outdir, "program.pdf"))
+
+    except subprocess.CalledProcessError as e:
+        errors.append(
+            f"LibreOffice: exit code {e.returncode}; "
+            f"stdout={e.stdout}; stderr={e.stderr}"
+        )
+        return False
+
+    except Exception as e:
+        errors.append(
+            f"LibreOffice: {type(e).__name__}: {e}"
+        )
+        return False
+
+    finally:
+        shutil.rmtree(profile_dir, ignore_errors=True)
+
 
 
 def convert(docx_bytes, key=None):
