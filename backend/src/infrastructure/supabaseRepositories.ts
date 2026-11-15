@@ -118,10 +118,29 @@ export const createSupabaseRepositories = (url: string, key: string) => {
     },
 
     update: async (id, n): Promise<Song> => {
-      await call("PATCH", `songs?id=eq.${id}`, { section_type_id: n.sectionTypeId, title: n.title, melody: n.melody, psalm_number: n.psalmNumber });
-      const old = (await call("GET", `verses?song_id=eq.${id}&select=id&limit=1000`)).map((r) => r.id as number);
-      await call("POST", "verses", verseRows(id, n));                      // new lyrics first ...
-      if (old.length) await call("DELETE", `verses?id=in.(${old.join(",")})`);   // ... then drop the old ones
+      const old = await call("GET", `verses?song_id=eq.${id}&select=id,kind,verse_no,text&limit=1000`);
+      const replacement = verseRows(id, n);
+
+      const restore = async () => {
+        await call("DELETE", `verses?song_id=eq.${id}`);
+        if (old.length) await call("POST", "verses", old.map(({ id: _id, ...row }) => row));
+      };
+
+      try {
+        await call("DELETE", `verses?song_id=eq.${id}`);
+        await call("POST", "verses", replacement);
+        await call("PATCH", `songs?id=eq.${id}`, {
+          section_type_id: n.sectionTypeId, title: n.title, melody: n.melody, psalm_number: n.psalmNumber,
+        });
+      } catch (error) {
+        try {
+          await restore();
+        } catch (restoreError) {
+          throw new AggregateError([error, restoreError], `Failed to update song ${id} and restore its original verses`);
+        }
+        throw error;
+      }
+
       return (await songs.findByIds([id]))[0];
     },
 

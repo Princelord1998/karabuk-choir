@@ -46,9 +46,9 @@ const test = (row: Row, col: string, expr: string): boolean => {
 };
 
 export const startMock = async (folder: string | null, port: number, users: Record<string, string>) => {
-  const db: Record<string, Row[]> = folder === null ? { section_types: [], masses: [], songs: [], verses: [], mass_songs: [] } : {
+  const db: Record<string, Row[]> = folder === null ? { section_types: [], masses: [], songs: [], verses: [], mass_songs: [], app_users: [] } : {
     section_types: load(folder, "section_types.csv"), masses: load(folder, "masses.csv"), songs: load(folder, "songs.csv"),
-    verses: load(folder, "verses.csv"), mass_songs: load(folder, "mass_songs.csv"),
+    verses: load(folder, "verses.csv"), mass_songs: load(folder, "mass_songs.csv"), app_users: [],
   };
   const nextId = (t: string) => Math.max(0, ...db[t].map((r) => r.id)) + 1;
   const sessions = new Map<string, string>();         // token -> email
@@ -121,6 +121,9 @@ export const startMock = async (folder: string | null, port: number, users: Reco
         const inserted: Row[] = [];
         const keys = url.searchParams.get("on_conflict")?.split(",") ?? PK[table];
         for (const r of input) {
+          if (table === "verses" && r.verse_no !== null && db.verses.some(
+            (v) => v.song_id === r.song_id && v.kind === r.kind && v.verse_no === r.verse_no,
+          )) return out(409, { code: "23505", message: "duplicate key value violates unique constraint" });
           const dup = keys && db[table].find((x) => keys.every((k) => x[k] === r[k]));
           if (dup && prefer.includes("merge-duplicates")) { Object.assign(dup, r); inserted.push(dup); continue; }
           if (dup && prefer.includes("ignore-duplicates")) continue;

@@ -3,16 +3,24 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install LibreOffice and fonts
-RUN apt-get update && apt-get install -y \
+# Install LibreOffice and font dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     libreoffice-writer \
     fonts-liberation \
+    fonts-crosextra-carlito \
+    fonts-crosextra-caladea \
+    fonts-dejavu-core \
+    fontconfig \
+    && fc-cache -f -v \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure font discovery
+ENV HOME=/tmp
+ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy renderer source and Word templates

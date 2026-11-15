@@ -36,14 +36,14 @@ check("stats counts", stats.json.songs > 600 && stats.json.masses > 70 && !!stat
 // ---------- accounts
 check("bad password -> 401", (await call("POST", "/api/login", { email: "admin@choir.test", password: "nope" })).status === 401);
 const admin = (await call("POST", "/api/login", { email: "admin@choir.test", password: "secret" })).json;
-const other = (await call("POST", "/api/login", { email: "other@choir.test", password: "pass" })).json;
+const other = await call("POST", "/api/login", { email: "other@choir.test", password: "pass" });
 check("admin is editor", admin.editor === true && !!admin.token, admin);
-check("other is not editor", other.editor === false, other);
+check("other is not authorized", other.status === 401, other);
 check("/api/me", (await call("GET", "/api/me", undefined, admin.token)).json.email === "admin@choir.test");
 check("/api/me anonymous", (await call("GET", "/api/me")).json.email === null);
 const newSong = { sectionId: 1, title: "Chant de test", melody: "Mélodie", refrain: "Refrain un", verses: ["1. Un", "2- Deux"] };
 check("write without login -> 401", (await call("POST", "/api/songs", newSong)).status === 401);
-check("write as non-editor -> 403", (await call("POST", "/api/songs", newSong, other.token)).status === 403);
+check("write as unauthorized account -> 401", (await call("POST", "/api/songs", newSong, other.json.token)).status === 401);
 check("fake token -> 401", (await call("POST", "/api/songs", newSong, "bogus")).status === 401);
 
 // ---------- songs
