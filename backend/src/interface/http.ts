@@ -127,7 +127,13 @@ if ((g = path.match(/^\/api\/admin\/users\/([^/]+)$/))) {
       // ---- songs
       if (m === "GET" && path === "/api/songs") {
         const sec = url.searchParams.get("sectionId");
-        return send(res, 200, await uc.searchSongs(url.searchParams.get("q") ?? "", sec ? +sec : undefined, url.searchParams.get("lyrics") === "1"));
+        const language = url.searchParams.get("language");
+        if (language !== null && language !== "en" && language !== "la" && language !== "other")
+          throw new ValidationError("invalid language filter");
+        return send(res, 200, await uc.searchSongs(
+          url.searchParams.get("q") ?? "", sec ? +sec : undefined,
+          url.searchParams.get("lyrics") === "1", language ?? undefined,
+        ));
       }
       if (m === "POST" && path === "/api/songs") {
         await editor();

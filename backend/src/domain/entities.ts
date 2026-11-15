@@ -5,6 +5,7 @@ export type Verse = { kind: VerseKind; verseNo: number | null; text: string };
 
 export type SectionType = { id: number; name: string; massOrder: number };
 export type SongSummary = { id: number; sectionTypeId: number; title: string; melody: string | null };
+export type SongLanguageFilter = "en" | "la" | "other";
 export type Song = SongSummary & { psalmNumber: number | null; verses: Verse[] };
 
 export type Mass = { id: number; date: string };

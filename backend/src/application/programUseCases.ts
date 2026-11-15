@@ -1,7 +1,7 @@
 // Application layer: use cases. Depends only on domain types and ports.
 import {
   ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError, isIsoDate, sortVerses, stripVerseNumber,
-  type NewSong, type Program, type ProgramEntry, type Session, type SongDetail, type Stats
+  type NewSong, type Program, type ProgramEntry, type Session, type SongDetail, type SongLanguageFilter, type Stats
 } from "../domain/entities.ts";
 import type { AuthService, MassRepository, ProgramRenderer, SectionRepository, SongRepository, UserRepository } from "../domain/ports.ts";
 
@@ -337,8 +337,8 @@ const deleteUser = async (
   listSections: () => d.sections.list(),
   previewStatus: () => d.renderer.status(),
 
-  searchSongs: (q: string, sectionTypeId?: number, inLyrics = false) =>
-    d.songs.search(q.trim(), sectionTypeId, inLyrics),
+  searchSongs: (q: string, sectionTypeId?: number, inLyrics = false, language?: SongLanguageFilter) =>
+    d.songs.search(q.trim(), sectionTypeId, inLyrics, language),
 
   getProgram,
   setSection,

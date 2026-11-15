@@ -8,6 +8,7 @@ export const nextPosition = (p: Program | null, sectionId: number): number =>
   1 + Math.max(0, ...(p?.entries ?? []).filter((e) => e.sectionTypeId === sectionId).map((e) => e.position));
 
 export type Verse = { kind: "refrain" | "verse" | "coda"; verseNo: number | null; text: string };
+export type SongLanguageFilter = "en" | "la" | "other";
 export type SongDetail = SongSummary & { psalmNumber: number | null; verses: Verse[]; usedOn: string[] };
 export type MassSummary = {
   id: number; date: string;

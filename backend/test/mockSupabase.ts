@@ -38,6 +38,7 @@ const test = (row: Row, col: string, expr: string): boolean => {
   switch (op) {
     case "eq": return String(v) === val;
     case "in": return val.slice(1, -1).split(",").includes(String(v));
+    case "not": return val.startsWith("in.(") && v !== null && v !== undefined && !val.slice(4, -1).split(",").includes(String(v));
     case "ilike": return typeof v === "string" && likeRegex(val).test(v);
     case "lt": return v !== null && v < (typeof v === "number" ? Number(val) : val);
     case "gt": return v !== null && v > (typeof v === "number" ? Number(val) : val);

@@ -1,5 +1,5 @@
 // Ports: what the application needs from the outside world. Implemented in infrastructure/.
-import type { Mass, MassEntry, MassSummary, NewSong, Program, SectionType, Song, SongSummary, AppUser } from "./entities.ts";
+import type { Mass, MassEntry, MassSummary, NewSong, Program, SectionType, Song, SongLanguageFilter, SongSummary, AppUser } from "./entities.ts";
 
 export interface SectionRepository {
   list(): Promise<SectionType[]>;
@@ -7,7 +7,7 @@ export interface SectionRepository {
 
 export interface SongRepository {
   findByIds(ids: number[]): Promise<Song[]>;
-  search(query: string, sectionTypeId?: number, inLyrics?: boolean): Promise<SongSummary[]>;
+  search(query: string, sectionTypeId?: number, inLyrics?: boolean, language?: SongLanguageFilter): Promise<SongSummary[]>;
   findExact(sectionTypeId: number, title: string): Promise<SongSummary | null>;   // same title in the same section
   create(song: NewSong): Promise<Song>;
   update(id: number, song: NewSong): Promise<Song>;

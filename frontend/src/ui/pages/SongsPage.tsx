@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ProgramGateway } from "../../application/ProgramGateway";
-import type { Section, SongSummary } from "../../domain/types";
+import type { Section, SongLanguageFilter, SongSummary } from "../../domain/types";
 import { SongDetailDialog } from "../SongDetailDialog";
 import { SongForm } from "../SongForm";
 
@@ -10,6 +10,7 @@ type Props = { gateway: ProgramGateway; sections: Section[]; editor: boolean };
 export function SongsPage({ gateway, sections, editor }: Props) {
   const [q, setQ] = useState("");
   const [sectionId, setSectionId] = useState<number | undefined>(undefined);
+  const [language, setLanguage] = useState<SongLanguageFilter | undefined>(undefined);
   const [inLyrics, setInLyrics] = useState(true);
   const [results, setResults] = useState<SongSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,10 +21,10 @@ export function SongsPage({ gateway, sections, editor }: Props) {
   useEffect(() => {
     setLoading(true);
     const t = setTimeout(() => {
-      gateway.searchSongs(q, sectionId, inLyrics).then(setResults).catch(() => setResults([])).finally(() => setLoading(false));
+      gateway.searchSongs(q, sectionId, inLyrics, language).then(setResults).catch(() => setResults([])).finally(() => setLoading(false));
     }, 250);
     return () => clearTimeout(t);
-  }, [gateway, q, sectionId, inLyrics, reload]);
+  }, [gateway, q, sectionId, inLyrics, language, reload]);
 
   const name = (id: number) => sections.find((s) => s.id === id)?.name ?? "";
 
@@ -35,6 +36,12 @@ export function SongsPage({ gateway, sections, editor }: Props) {
       </div>
       <input className="bigsearch" placeholder="Rechercher un titre, une mélodie, un mot des paroles…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
       <label className="check"><input type="checkbox" checked={inLyrics} onChange={(e) => setInLyrics(e.target.checked)} /> chercher aussi dans les paroles</label>
+      <div className="chips" aria-label="Filtrer par langue">
+        <button className={`chip ${language === undefined ? "on" : ""}`} onClick={() => setLanguage(undefined)}>Toutes les langues</button>
+        <button className={`chip ${language === "en" ? "on" : ""}`} onClick={() => setLanguage("en")}>Anglais</button>
+        <button className={`chip ${language === "la" ? "on" : ""}`} onClick={() => setLanguage("la")}>Latin</button>
+        <button className={`chip ${language === "other" ? "on" : ""}`} onClick={() => setLanguage("other")}>Autres langues (hors français)</button>
+      </div>
       <div className="chips">
         <button className={`chip ${sectionId === undefined ? "on" : ""}`} onClick={() => setSectionId(undefined)}>Tous</button>
         {sections.map((s) => (

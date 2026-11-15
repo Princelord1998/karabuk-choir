@@ -1,7 +1,7 @@
 // Adapter: Postgres via Supabase's REST API (PostgREST). Plain fetch, no SDK.
 import {
   sortVerses,
-  type AppUser, type Mass, type MassEntry, type MassSummary, type NewSong, type SectionType, type Song, type SongSummary, type Verse,
+  type AppUser, type Mass, type MassEntry, type MassSummary, type NewSong, type SectionType, type Song, type SongLanguageFilter, type SongSummary, type Verse,
 } from "../domain/entities.ts";
 import type { MassRepository, SectionRepository, SongRepository, UserRepository } from "../domain/ports.ts";
 
@@ -80,16 +80,17 @@ export const createSupabaseRepositories = (url: string, key: string) => {
       }));
     },
 
-    search: async (q, sectionTypeId, inLyrics) => {
+    search: async (q, sectionTypeId, inLyrics, language) => {
       const safe = q.replace(/[,()*%\\]/g, " ").trim();
       const sec = sectionTypeId ? `&section_type_id=eq.${sectionTypeId}` : "";
+      const lang = language === "other" ? "&language=not.in.(en,la,fr)" : language ? `&language=eq.${language}` : "";
       const head = `songs?select=${SUMMARY}&order=title&limit=100`;
-      let rows = await call("GET", safe ? `${head}&or=(title.ilike.*${enc(safe)}*,melody.ilike.*${enc(safe)}*)${sec}` : `${head}${sec}`);
+      let rows = await call("GET", safe ? `${head}&or=(title.ilike.*${enc(safe)}*,melody.ilike.*${enc(safe)}*)${sec}${lang}` : `${head}${sec}${lang}`);
       if (inLyrics && safe) {                       // also look inside the lyrics
         const hits = await call("GET", `verses?text=ilike.*${enc(safe)}*&select=song_id&limit=500`);
         const known = new Set(rows.map((r) => r.id));
         const more = unique(hits.map((h) => h.song_id as number)).filter((id) => !known.has(id)).slice(0, 150);
-        if (more.length) rows = rows.concat(await call("GET", `songs?id=in.(${more.join(",")})&select=${SUMMARY}&order=title${sec}`));
+        if (more.length) rows = rows.concat(await call("GET", `songs?id=in.(${more.join(",")})&select=${SUMMARY}&order=title${sec}${lang}`));
       }
       return rows.map(summary);
     },

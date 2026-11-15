@@ -1,6 +1,6 @@
 // Port: what the UI needs from a backend. The UI depends on this, not on fetch.
 import type {
-  AppUser, MassSummary, Me, NewSongInput, PreviewStatus, Program, Section, Session, SongDetail, SongSummary, Stats,
+  AppUser, MassSummary, Me, NewSongInput, PreviewStatus, Program, Section, Session, SongDetail, SongLanguageFilter, SongSummary, Stats,
 } from "../domain/types";
 
 export interface ProgramGateway {
@@ -24,7 +24,7 @@ export interface ProgramGateway {
   // reading
   stats(): Promise<Stats>;
   listSections(): Promise<Section[]>;
-  searchSongs(query: string, sectionId?: number, inLyrics?: boolean): Promise<SongSummary[]>;
+  searchSongs(query: string, sectionId?: number, inLyrics?: boolean, language?: SongLanguageFilter): Promise<SongSummary[]>;
   getSong(id: number): Promise<SongDetail>;
   listMasses(limit?: number, before?: string): Promise<MassSummary[]>;
   getProgram(date: string): Promise<Program>;
