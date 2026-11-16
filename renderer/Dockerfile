@@ -12,9 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-crosextra-caladea \
     fonts-dejavu-core \
     fontconfig \
-    && fc-cache -f -v \
     && rm -rf /var/lib/apt/lists/*
 
+# Install custom fonts
+COPY fonts/ /usr/local/share/fonts/custom/
+RUN fc-cache -f -v
 # Configure font discovery
 ENV HOME=/tmp
 ENV PYTHONUNBUFFERED=1
