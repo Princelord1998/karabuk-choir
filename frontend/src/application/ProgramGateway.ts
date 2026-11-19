@@ -31,11 +31,12 @@ export interface ProgramGateway {
   previewStatus(): Promise<PreviewStatus>;
   pdfUrl(date: string, community: string): string;
   docxUrl(date: string, community: string): string;
-  // writing (editors only). Errors may carry `existingId` (duplicate title).
+  // Editors can create/update; destructive operations require admin. Errors may carry `existingId`.
   createSong(input: NewSongInput): Promise<SongSummary>;
   updateSong(id: number, input: NewSongInput): Promise<SongSummary>;
   deleteSong(id: number): Promise<void>;
   setSection(date: string, sectionId: number, songId: number, position: number): Promise<Program>;
   clearSection(date: string, sectionId: number, position: number): Promise<Program>;
+  deleteMass(date: string): Promise<Program>;
   copyProgram(date: string, fromDate: string): Promise<Program>;      // load a complete Mass
 }

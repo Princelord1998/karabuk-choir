@@ -188,6 +188,7 @@ export const createSupabaseRepositories = (url: string, key: string) => {
         throw e;
       }
     },
+    remove: async (id) => { await call("DELETE", `masses?id=eq.${id}`); },
     listSummaries: async (limit, before): Promise<MassSummary[]> => {
       const ms = await call("GET", `masses?select=id,mass_date&order=mass_date.desc,id.desc&limit=${limit}${before ? `&mass_date=lt.${before}` : ""}`);
       if (!ms.length) return [];

@@ -5,7 +5,12 @@ import { createSupabaseAuth } from "../src/infrastructure/supabaseAuth.ts";
 import { createHttpServer } from "../src/interface/http.ts";
 import { startMock } from "./mockSupabase.ts";
 
-const mock = await startMock(process.argv[2] ?? "../data", 4010, { "admin@choir.test": "secret", "other@choir.test": "pass" });
+const mock = await startMock(
+  process.argv[2] ?? "../data",
+  4010,
+  { "admin@choir.test": "secret", "other@choir.test": "pass" },
+  { "admin@choir.test": "admin", "other@choir.test": "editor" },
+);
 const uc = createProgramUseCases({
   ...createSupabaseRepositories("http://localhost:4010", "service"),
   auth: createSupabaseAuth("http://localhost:4010", "anon"),
@@ -37,13 +42,15 @@ check("stats counts", stats.json.songs > 600 && stats.json.masses > 70 && !!stat
 check("bad password -> 401", (await call("POST", "/api/login", { email: "admin@choir.test", password: "nope" })).status === 401);
 const admin = (await call("POST", "/api/login", { email: "admin@choir.test", password: "secret" })).json;
 const other = await call("POST", "/api/login", { email: "other@choir.test", password: "pass" });
-check("admin is editor", admin.editor === true && !!admin.token, admin);
-check("other is not authorized", other.status === 401, other);
+check("admin can edit and delete", admin.editor === true && admin.admin === true && !!admin.token, admin);
+check("editor can edit but not administer", other.status === 200 && other.json.editor === true && other.json.admin === false, other.json);
 check("/api/me", (await call("GET", "/api/me", undefined, admin.token)).json.email === "admin@choir.test");
 check("/api/me anonymous", (await call("GET", "/api/me")).json.email === null);
+check("editor cannot delete users", (await call("DELETE", "/api/admin/users/test-user-1", undefined, other.json.token)).status === 403);
 const newSong = { sectionId: 1, title: "Chant de test", melody: "Mélodie", refrain: "Refrain un", verses: ["1. Un", "2- Deux"] };
 check("write without login -> 401", (await call("POST", "/api/songs", newSong)).status === 401);
-check("write as unauthorized account -> 401", (await call("POST", "/api/songs", newSong, other.json.token)).status === 401);
+const editorCreated = await call("POST", "/api/songs", { ...newSong, title: `Chant éditeur ${Date.now()}` }, other.json.token);
+check("editor can create songs", editorCreated.status === 201, editorCreated);
 check("fake token -> 401", (await call("POST", "/api/songs", newSong, "bogus")).status === 401);
 
 // ---------- songs
@@ -73,8 +80,8 @@ check("duplicate -> 409 with existingId", dup.status === 409 && dup.json.existin
 check("invalid -> 400", (await call("POST", "/api/songs", { sectionId: 1, title: "x" }, admin.token)).status === 400);
 const detail = await call("GET", `/api/songs/${id}`);
 check("detail has numbered verses, no usage", detail.json.verses.length === 3 && detail.json.verses[0].kind === "refrain" && detail.json.verses[1].text === "Un" && detail.json.usedOn.length === 0, detail.json);
-const upd = await call("PUT", `/api/songs/${id}`, { sectionId: 2, title: "Chant modifié", refrain: "Nouveau refrain", verses: ["Seul couplet"] }, admin.token);
-check("update -> 200", upd.status === 200 && upd.json.title === "Chant modifié", upd);
+const upd = await call("PUT", `/api/songs/${id}`, { sectionId: 2, title: "Chant modifié", refrain: "Nouveau refrain", verses: ["Seul couplet"] }, other.json.token);
+check("editor can update songs", upd.status === 200 && upd.json.title === "Chant modifié", upd);
 const after = (await call("GET", `/api/songs/${id}`)).json;
 check("update replaced lyrics and section", after.sectionTypeId === 2 && after.verses.length === 2 && after.verses[1].text === "Seul couplet", after);
 check("no orphan verses after update", mock.db.verses.filter((v) => v.song_id === id).length === 2);
@@ -97,13 +104,33 @@ const again = await call("POST", "/api/masses/2030-01-06/copy", { fromDate: "202
 check("copy twice does not duplicate", mock.db.mass_songs.filter((l) => l.mass_id === tgt.id).length === srcCount && again.status === 200);
 
 // ---------- program editing + usage + delete rules
-const set = await call("PUT", "/api/masses/2030-01-06/sections/2", { songId: id }, admin.token);
+const set = await call("PUT", "/api/masses/2030-01-06/sections/2", { songId: id }, other.json.token);
 check("set a section", set.status === 200 && set.json.entries.some((e: any) => e.song.id === id), set.status);
 check("usage shows the date", (await call("GET", `/api/songs/${id}`)).json.usedOn.includes("2030-01-06"));
 check("cannot delete a used song -> 409", (await call("DELETE", `/api/songs/${id}`, undefined, admin.token)).status === 409);
+check("editor cannot clear program section", (await call("DELETE", "/api/masses/2030-01-06/sections/2?position=1", undefined, other.json.token)).status === 403);
 await call("DELETE", "/api/masses/2030-01-06/sections/2?position=1", undefined, admin.token);
+check("editor cannot delete song", (await call("DELETE", `/api/songs/${id}`, undefined, other.json.token)).status === 403);
 const del = await call("DELETE", `/api/songs/${id}`, undefined, admin.token);
 check("delete an unused song", del.status === 200 && !mock.db.songs.some((s) => s.id === id) && !mock.db.verses.some((v) => v.song_id === id), del);
+check("editor can create and use songs without delete access", (await call("GET", `/api/songs/${editorCreated.json.id}`)).status === 200);
+
+const massSongId = other2.json.id;
+const massToDelete = await call("PUT", "/api/masses/2030-02-01/sections/2", { songId: massSongId }, admin.token);
+check("create mass for deletion test", massToDelete.status === 200 && massToDelete.json.massExists, massToDelete.status);
+const massIdToDelete = mock.db.masses.find((m) => m.mass_date === "2030-02-01")?.id;
+check("editor cannot delete a mass", (await call("DELETE", "/api/masses/2030-02-01", undefined, other.json.token)).status === 403);
+const deletedMass = await call("DELETE", "/api/masses/2030-02-01", undefined, admin.token);
+check(
+  "admin deletes mass and assignments only",
+  deletedMass.status === 200 && deletedMass.json.massExists === false &&
+    !mock.db.masses.some((m) => m.mass_date === "2030-02-01") &&
+    !mock.db.mass_songs.some((l) => l.mass_id === massIdToDelete) &&
+    mock.db.songs.some((s) => s.id === massSongId),
+  deletedMass,
+);
+const deleteEditorCreated = await call("DELETE", `/api/songs/${editorCreated.json.id}`, undefined, admin.token);
+check("admin can delete song created by editor", deleteEditorCreated.status === 200, deleteEditorCreated);
 check("pdf + docx", (await fetch(`${B}/api/masses/2025-04-27/program.pdf`)).status === 200 && (await fetch(`${B}/api/masses/2025-04-27/program.docx`)).status === 200);
 
 console.log(`${passed} passed, ${failed} failed`);

@@ -12,7 +12,7 @@ export type Mass = { id: number; date: string };
 export type MassEntry = { sectionTypeId: number; position: number; songId: number };
 
 export type ProgramEntry = { sectionTypeId: number; sectionName: string; position: number; song: Song };
-export type Program = { date: string; community: string; entries: ProgramEntry[] };
+export type Program = { date: string; community: string; massExists: boolean; entries: ProgramEntry[] };
 
 export type NewSong = {
   sectionTypeId: number; title: string; melody: string | null; psalmNumber: number | null;

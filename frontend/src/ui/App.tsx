@@ -20,9 +20,9 @@ export function App() {
   let page;
   switch (route.path) {
     case "/programme":
-      page = <ProgramPage gateway={gateway} route={route} sections={sections} editor={me.editor} community={COMMUNITY} />; break;
+      page = <ProgramPage gateway={gateway} route={route} sections={sections} editor={me.editor} admin={me.admin} community={COMMUNITY} />; break;
     case "/chants":
-      page = <SongsPage gateway={gateway} sections={sections} editor={me.editor} />; break;
+      page = <SongsPage gateway={gateway} sections={sections} editor={me.editor} admin={me.admin} />; break;
     case "/messes":
       page = <MassesPage gateway={gateway} sections={sections} editor={me.editor} community={COMMUNITY} />; break;
     case "/connexion":

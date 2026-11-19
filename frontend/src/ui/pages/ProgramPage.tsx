@@ -9,7 +9,7 @@ import { go, type Route } from "../router";
 import { SectionList } from "../SectionList";
 import { SongPicker } from "../SongPicker";
 
-type Props = { gateway: ProgramGateway; route: Route; sections: Section[]; editor: boolean; community: string };
+type Props = { gateway: ProgramGateway; route: Route; sections: Section[]; editor: boolean; admin: boolean; community: string };
 
 function useDebounced<T>(value: T, ms = 500): T {
   const [v, setV] = useState(value);
@@ -18,13 +18,14 @@ function useDebounced<T>(value: T, ms = 500): T {
 }
 
 /** Build a Mass program (editors) or view it (visitors); live preview made from the Word template. */
-export function ProgramPage({ gateway, route, sections, editor, community: defaultCommunity }: Props) {
+export function ProgramPage({ gateway, route, sections, editor, admin, community: defaultCommunity }: Props) {
   const date = route.params.get("date") || nextSunday();
   const [community, setCommunity] = useState(defaultCommunity);
   const [target, setTarget] = useState<{ sectionId: number; position: number } | null>(null);
   const [loadMass, setLoadMass] = useState(false);
-  const { program, version, error, setSong, clear, copyFrom } = useProgram(gateway, date);
+  const { program, version, error, setSong, clear, copyFrom, removeMass } = useProgram(gateway, date);
   const [status, setStatus] = useState<PreviewStatus | null>(null);
+  const [deletingMass, setDeletingMass] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -36,6 +37,13 @@ export function ProgramPage({ gateway, route, sections, editor, community: defau
   const debounced = useDebounced(community);
   const pdf = `${gateway.pdfUrl(date, debounced)}&v=${version}`;
   const count = program?.entries.length ?? 0;
+  const deleteCurrentMass = async () => {
+    if (!program?.massExists || deletingMass) return;
+    if (!window.confirm(`Supprimer la messe du ${frenchLong(date)} et ses affectations ? Les chants du catalogue ne seront pas supprimés.`)) return;
+    setDeletingMass(true);
+    try { await removeMass(); }
+    finally { setDeletingMass(false); }
+  };
 
   return (
     <div className="layout">
@@ -46,10 +54,13 @@ export function ProgramPage({ gateway, route, sections, editor, community: defau
         </label>
         <p className="muted">{frenchLong(date)} · {count} chant(s)</p>
         {editor && <button className="wide-btn" onClick={() => setLoadMass(true)}>⤓ Charger une messe complète</button>}
+        {admin && program?.massExists && <button className="wide-btn danger" disabled={deletingMass} onClick={() => void deleteCurrentMass()}>
+          {deletingMass ? "Suppression…" : "Supprimer cette messe"}
+        </button>}
         <label className="field">Communauté (titre)<input value={community} onChange={(e) => setCommunity(e.target.value)} /></label>
         {!editor && <p className="hint">Mode lecture. <a href="#/connexion">Connectez-vous</a> pour modifier le programme.</p>}
         {error && <p className="error">{error}</p>}
-        <SectionList sections={sections} program={program} readOnly={!editor}
+        <SectionList sections={sections} program={program} readOnly={!editor} canDelete={admin}
           onChoose={(sectionId, position) => setTarget({ sectionId, position })} onClear={clear} />
       </aside>
       <section className="preview-col">

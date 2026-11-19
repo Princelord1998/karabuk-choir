@@ -6,11 +6,11 @@ import { href } from "./router";
 import { SongForm } from "./SongForm";
 
 type Props = {
-  gateway: ProgramGateway; sections: Section[]; songId: number; editor: boolean;
+  gateway: ProgramGateway; sections: Section[]; songId: number; editor: boolean; admin: boolean;
   onClose: () => void; onChanged: () => void;    // onChanged: the list must be reloaded
 };
 
-export function SongDetailDialog({ gateway, sections, songId, editor, onClose, onChanged }: Props) {
+export function SongDetailDialog({ gateway, sections, songId, editor, admin, onClose, onChanged }: Props) {
   const [song, setSong] = useState<SongDetail | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export function SongDetailDialog({ gateway, sections, songId, editor, onClose, o
             </p>
             <div className="actions">
               {editor && <button onClick={() => setEditing(true)}>Modifier</button>}
-              {editor && <button className="ghost danger" onClick={remove}>Supprimer</button>}
+              {admin && <button className="ghost danger" onClick={remove}>Supprimer</button>}
               <button className="ghost" onClick={onClose}>Fermer</button>
             </div>
           </>

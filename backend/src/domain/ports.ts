@@ -23,6 +23,7 @@ export interface MassRepository {
   upsertEntry(massId: number, entry: MassEntry): Promise<void>;
   removeEntries(massId: number, sectionTypeId: number, position?: number): Promise<void>;
   replaceEntries(massId: number, entries: MassEntry[]): Promise<void>;
+  remove(id: number): Promise<void>;
   listSummaries(limit: number, before?: string): Promise<MassSummary[]>;           // newest first; "before" = only older dates
   count(): Promise<number>;
 }

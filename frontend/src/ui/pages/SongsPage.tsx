@@ -4,10 +4,10 @@ import type { Section, SongLanguageFilter, SongSummary } from "../../domain/type
 import { SongDetailDialog } from "../SongDetailDialog";
 import { SongForm } from "../SongForm";
 
-type Props = { gateway: ProgramGateway; sections: Section[]; editor: boolean };
+type Props = { gateway: ProgramGateway; sections: Section[]; editor: boolean; admin: boolean };
 
 /** The song library: search by title / melody / lyrics, filter by section, read lyrics, add and edit (editors). */
-export function SongsPage({ gateway, sections, editor }: Props) {
+export function SongsPage({ gateway, sections, editor, admin }: Props) {
   const [q, setQ] = useState("");
   const [sectionId, setSectionId] = useState<number | undefined>(undefined);
   const [language, setLanguage] = useState<SongLanguageFilter | undefined>(undefined);
@@ -62,7 +62,7 @@ export function SongsPage({ gateway, sections, editor }: Props) {
       </ul>
 
       {openId !== null && (
-        <SongDetailDialog gateway={gateway} sections={sections} songId={openId} editor={editor}
+        <SongDetailDialog gateway={gateway} sections={sections} songId={openId} editor={editor} admin={admin}
           onClose={() => setOpenId(null)} onChanged={() => setReload((n) => n + 1)} />
       )}
       {adding && (

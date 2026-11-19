@@ -149,7 +149,7 @@ if ((g = path.match(/^\/api\/admin\/users\/([^/]+)$/))) {
           return send(res, 200, { id: song.id, sectionTypeId: song.sectionTypeId, title: song.title, melody: song.melody });
         }
         if (m === "DELETE") {
-          await editor();
+          await uc.assertAdmin(bearer(req));
           await uc.deleteSong(id);
           return send(res, 200, { deleted: id });
         }
@@ -181,6 +181,10 @@ if ((g = path.match(/^\/api\/admin\/users\/([^/]+)$/))) {
         return res.end(Buffer.from(docx));
       }
       if ((g = path.match(/^\/api\/masses\/([^/]+)\/program$/)) && m === "GET") return send(res, 200, await uc.getProgram(g[1]));
+      if ((g = path.match(/^\/api\/masses\/([^/]+)$/)) && m === "DELETE") {
+        await uc.assertAdmin(bearer(req));
+        return send(res, 200, await uc.deleteMass(g[1]));
+      }
 
       if ((g = path.match(/^\/api\/masses\/([^/]+)\/copy$/)) && m === "POST") {
         await editor();
@@ -194,7 +198,7 @@ if ((g = path.match(/^\/api\/admin\/users\/([^/]+)$/))) {
           return send(res, 200, await uc.setSection(g[1], +g[2], Number(body.songId), body.position ?? 1));
         }
         if (m === "DELETE") {
-          await editor();
+          await uc.assertAdmin(bearer(req));
           const pos = url.searchParams.get("position");
           return send(res, 200, await uc.clearSection(g[1], +g[2], pos ? +pos : undefined));
         }

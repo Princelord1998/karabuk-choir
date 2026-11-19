@@ -76,5 +76,6 @@ deleteAdminUser: async (id) => {
   deleteSong: async (id) => { await request("DELETE", `/api/songs/${id}`); },
   setSection: (date, sectionId, songId, position) => request("PUT", `/api/masses/${date}/sections/${sectionId}`, { songId, position }),
   clearSection: (date, sectionId, position) => request("DELETE", `/api/masses/${date}/sections/${sectionId}?position=${position}`),
+  deleteMass: (date) => request("DELETE", `/api/masses/${date}`),
   copyProgram: (date, fromDate) => request("POST", `/api/masses/${date}/copy`, { fromDate }),
 };

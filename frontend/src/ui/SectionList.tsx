@@ -2,12 +2,12 @@ import type { Program, Section } from "../domain/types";
 import { nextPosition } from "../domain/types";
 
 type Props = {
-  sections: Section[]; program: Program | null; readOnly?: boolean;
+  sections: Section[]; program: Program | null; readOnly?: boolean; canDelete?: boolean;
   onChoose: (sectionId: number, position: number) => void;
   onClear: (sectionId: number, position: number) => void;
 };
 
-export function SectionList({ sections, program, readOnly, onChoose, onClear }: Props) {
+export function SectionList({ sections, program, readOnly, canDelete, onChoose, onClear }: Props) {
   return (
     <div className="sections">
       {sections.map((s) => {
@@ -20,7 +20,7 @@ export function SectionList({ sections, program, readOnly, onChoose, onClear }: 
               <div className="row" key={e.position}>
                 <span>{e.song.title}</span>
                 {!readOnly && <button onClick={() => onChoose(s.id, e.position)}>Changer</button>}
-                {!readOnly && <button className="ghost" onClick={() => onClear(s.id, e.position)}>Vider</button>}
+                {canDelete && <button className="ghost danger" onClick={() => onClear(s.id, e.position)}>Vider</button>}
               </div>
             ))}
             {!readOnly && (

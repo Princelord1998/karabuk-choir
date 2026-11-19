@@ -2,7 +2,7 @@
 export type Section = { id: number; name: string; massOrder: number };
 export type SongSummary = { id: number; sectionTypeId: number; title: string; melody: string | null };
 export type ProgramEntry = { sectionTypeId: number; sectionName: string; position: number; song: SongSummary };
-export type Program = { date: string; community: string; entries: ProgramEntry[] };
+export type Program = { date: string; community: string; massExists: boolean; entries: ProgramEntry[] };
 
 export const nextPosition = (p: Program | null, sectionId: number): number =>
   1 + Math.max(0, ...(p?.entries ?? []).filter((e) => e.sectionTypeId === sectionId).map((e) => e.position));

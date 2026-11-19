@@ -46,11 +46,19 @@ const test = (row: Row, col: string, expr: string): boolean => {
   }
 };
 
-export const startMock = async (folder: string | null, port: number, users: Record<string, string>) => {
+export const startMock = async (
+  folder: string | null,
+  port: number,
+  users: Record<string, string>,
+  roles: Record<string, "admin" | "editor"> = {},
+) => {
   const db: Record<string, Row[]> = folder === null ? { section_types: [], masses: [], songs: [], verses: [], mass_songs: [], app_users: [] } : {
     section_types: load(folder, "section_types.csv"), masses: load(folder, "masses.csv"), songs: load(folder, "songs.csv"),
     verses: load(folder, "verses.csv"), mass_songs: load(folder, "mass_songs.csv"), app_users: [],
   };
+  db.app_users = Object.entries(roles).map(([email, role], index) => ({
+    id: `test-user-${index + 1}`, email, role, active: true,
+  }));
   const nextId = (t: string) => Math.max(0, ...db[t].map((r) => r.id)) + 1;
   const sessions = new Map<string, string>();         // token -> email
 

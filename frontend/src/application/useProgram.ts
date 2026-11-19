@@ -32,5 +32,6 @@ export function useProgram(gateway: ProgramGateway, date: string) {
     setSong: (sectionId: number, songId: number, position: number) =>
       apply(gateway.setSection(date, sectionId, songId, position)),
     clear: (sectionId: number, position: number) => apply(gateway.clearSection(date, sectionId, position)),
+    removeMass: () => apply(gateway.deleteMass(date)),
   };
 }

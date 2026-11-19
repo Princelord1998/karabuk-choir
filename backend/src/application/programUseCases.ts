@@ -72,7 +72,7 @@ export const createProgramUseCases = (d: Deps) => {
     entries.sort(
       (a, b) => order.get(a.sectionTypeId)!.massOrder - order.get(b.sectionTypeId)!.massOrder || a.position - b.position,
     );
-    return { date, community: d.community, entries };
+    return { date, community: d.community, massExists: mass !== null, entries };
   };
 
   /** Put a song in a section of a Mass (creating the Mass if needed). */
@@ -92,6 +92,14 @@ export const createProgramUseCases = (d: Deps) => {
     requireDate(date);
     const mass = await d.masses.findByDate(date);
     if (mass) await d.masses.removeEntries(mass.id, sectionTypeId, position);
+    return getProgram(date);
+  };
+
+  const deleteMass = async (date: string) => {
+    requireDate(date);
+    const mass = await d.masses.findByDate(date);
+    if (!mass) throw new NotFoundError(`Aucune messe le ${date}`);
+    await d.masses.remove(mass.id);
     return getProgram(date);
   };
 
@@ -343,6 +351,7 @@ const deleteUser = async (
   getProgram,
   setSection,
   clearSection,
+  deleteMass,
   renderPdf,
   renderWord,
 };
